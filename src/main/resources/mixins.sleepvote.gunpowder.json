@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "package": "io.github.gunpowder.mixin.sleepvote",
+  "compatibilityLevel": "JAVA_8",
+  "plugin": "io.github.gunpowder.mixin.plugin.SleepVoteModulePlugin",
+  "mixins": [
+    "ServerWorldMixin_SleepVote"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
