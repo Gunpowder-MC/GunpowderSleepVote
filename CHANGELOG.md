@@ -1,6 +1,6 @@
 # Gunpowder SleepVote 1.0.1
 
-- None
+- Add support for WorldSleep callbacks
 
 
 ---
