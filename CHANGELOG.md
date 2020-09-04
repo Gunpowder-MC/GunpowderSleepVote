@@ -1,6 +1,7 @@
 # Gunpowder SleepVote 1.0.1
 
 - Add support for WorldSleep callbacks
+- Fix annoying typo
 
 
 ---

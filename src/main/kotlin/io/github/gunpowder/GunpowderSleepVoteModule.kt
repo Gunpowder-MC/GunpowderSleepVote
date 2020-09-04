@@ -77,7 +77,7 @@ class GunpowderSleepVoteModule : GunpowderModule {
             sleepingPlayers.filter { !sleeping.contains(it) }.forEach {
                 sleeping.add(it as ServerPlayerEntity)
                 world.server.playerManager.broadcastChatMessage(
-                        LiteralText("${it.displayName.asString()} is now sleeping. (${(percentage * 100).roundToInt()}%, ${(treshold * 100).roundToInt()} needed)"), MessageType.SYSTEM, Util.NIL_UUID)
+                        LiteralText("${it.displayName.asString()} is now sleeping. (${(percentage * 100).roundToInt()}%, ${(treshold * 100).roundToInt()}% needed)"), MessageType.SYSTEM, Util.NIL_UUID)
             }
 
             (world as SleepSetter).setSleeping(shouldSkip)
