@@ -32,9 +32,10 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.network.MessageType
 import net.minecraft.server.network.ServerPlayerEntity
+import net.minecraft.stat.Stats
 import net.minecraft.text.LiteralText
 import net.minecraft.util.Util
-import net.minecraft.world.World
+import java.util.function.Consumer
 import kotlin.math.roundToInt
 import kotlin.streams.toList
 
@@ -82,6 +83,7 @@ class GunpowderSleepVoteModule : GunpowderModule {
 
             (world as SleepSetter).setSleeping(shouldSkip)
             if (shouldSkip) {
+                players.forEach { p -> p.statHandler.setStat(p, Stats.CUSTOM.getOrCreateStat(Stats.TIME_SINCE_REST), 0) }
                 world.server.playerManager.broadcastChatMessage(LiteralText("Good morning!"), MessageType.SYSTEM, Util.NIL_UUID)
                 sleeping.clear()
             }
