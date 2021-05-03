@@ -30,12 +30,9 @@ import io.github.gunpowder.configs.SleepConfig
 import io.github.gunpowder.mixin.cast.SleepSetter
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
 import net.minecraft.entity.player.PlayerEntity
-import net.minecraft.network.MessageType
 import net.minecraft.server.network.ServerPlayerEntity
 import net.minecraft.stat.Stats
 import net.minecraft.text.LiteralText
-import net.minecraft.util.Util
-import java.util.function.Consumer
 import kotlin.math.roundToInt
 import kotlin.streams.toList
 
@@ -44,10 +41,8 @@ class GunpowderSleepVoteModule : GunpowderModule {
     override val toggleable = true
     private val gunpowder: GunpowderMod
         get() = GunpowderMod.instance
-    private val treshold: Double
-            get() = gunpowder.registry.getConfig(SleepConfig::class.java).sleepPercentage
-
-    private val sleeping = mutableListOf<ServerPlayerEntity>()
+    private val config
+            get() = gunpowder.registry.getConfig(SleepConfig::class.java)
 
     override fun registerConfigs() {
         gunpowder.registry.registerConfig("gunpowder-sleepvote.yaml", SleepConfig::class.java, "gunpowder-sleepvote.yaml")
@@ -55,6 +50,8 @@ class GunpowderSleepVoteModule : GunpowderModule {
 
     override fun registerEvents() {
         ServerTickEvents.START_WORLD_TICK.register(ServerTickEvents.StartWorldTick { world ->
+            val sleeping = mutableListOf<ServerPlayerEntity>()
+
             if (world.isClient || !world.dimension.isBedWorking) {
                 return@StartWorldTick
             }
@@ -63,7 +60,7 @@ class GunpowderSleepVoteModule : GunpowderModule {
 
             players.removeIf { obj: PlayerEntity -> obj.isSpectator }
 
-            if (players.isEmpty() || treshold <= 0) {
+            if (players.isEmpty() || config.sleepPercentage <= 0) {
                 (world as SleepSetter).setSleeping(false)
                 return@StartWorldTick
             }
@@ -73,18 +70,20 @@ class GunpowderSleepVoteModule : GunpowderModule {
 
             val sleepingAmount = sleepingPlayers.count().toDouble()
             val percentage = sleepingAmount / total
-            val shouldSkip = percentage >= treshold
+            val shouldSkip = percentage >= config.sleepPercentage
 
             sleepingPlayers.filter { !sleeping.contains(it) }.forEach {
                 sleeping.add(it as ServerPlayerEntity)
-                world.server.playerManager.broadcastChatMessage(
-                        LiteralText("${it.displayName.asString()} is now sleeping. (${(percentage * 100).roundToInt()}%, ${(treshold * 100).roundToInt()}% needed)"), MessageType.SYSTEM, Util.NIL_UUID)
+                world.players.forEach { p -> p.sendMessage(
+                    LiteralText("${it.displayName.asString()} is now sleeping. (${(percentage * 100).roundToInt()}%, ${(config.sleepPercentage * 100).roundToInt()}% needed)"),
+                    false)
+                }
             }
 
             (world as SleepSetter).setSleeping(shouldSkip)
             if (shouldSkip) {
-                players.forEach { p -> p.statHandler.setStat(p, Stats.CUSTOM.getOrCreateStat(Stats.TIME_SINCE_REST), 0) }
-                world.server.playerManager.broadcastChatMessage(LiteralText("Good morning!"), MessageType.SYSTEM, Util.NIL_UUID)
+                world.players.forEach { p -> p.statHandler.setStat(p, Stats.CUSTOM.getOrCreateStat(Stats.TIME_SINCE_REST), 0) }
+                world.players.forEach { p -> p.sendMessage(LiteralText("Good morning!"), false) }
                 sleeping.clear()
             }
         })

@@ -1,3 +1,9 @@
+# Gunpowder SleepVote 1.0.4
+
+- Sleep skipping is now handled per-dimension instead of globally.
+
+---
+
 # Gunpowder SleepVote 1.0.3
 
 - Update to Gunpowder 0.3.1 (1.16.4)
