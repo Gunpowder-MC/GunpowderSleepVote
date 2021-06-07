@@ -1,3 +1,11 @@
+# Gunpowder SleepVote 1.0.5
+
+- Updated to 1.17
+- Removed the config, use the playersSleepingPercentage gamerule instead
+- Vanilla TranslatableText is used instead of LiteralText
+
+---
+
 # Gunpowder SleepVote 1.0.4
 
 - Sleep skipping is now handled per-dimension instead of globally.

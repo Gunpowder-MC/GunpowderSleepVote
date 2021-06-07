@@ -29,6 +29,7 @@ import io.github.gunpowder.mixin.cast.SleepSetter;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.server.world.SleepManager;
 import net.minecraft.util.profiler.Profiler;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.GameRules;
@@ -38,6 +39,9 @@ import net.minecraft.world.dimension.DimensionType;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.List;
 import java.util.function.Supplier;
@@ -45,24 +49,29 @@ import java.util.stream.Collectors;
 
 @Mixin(ServerWorld.class)
 public abstract class ServerWorldMixin_SleepVote extends World implements SleepSetter {
-    @Shadow
-    private boolean allPlayersSleeping;
-
     @Shadow public abstract void setTimeOfDay(long l);
 
     @Shadow protected abstract void wakeSleepingPlayers();
 
     @Shadow protected abstract void resetWeather();
 
-    @Shadow @Final private List<ServerPlayerEntity> players;
+
+    @Shadow @Final List<ServerPlayerEntity> players;
+
+    @Shadow @Final private SleepManager sleepManager;
 
     protected ServerWorldMixin_SleepVote(MutableWorldProperties properties, RegistryKey<World> registryKey, DimensionType dimensionType, Supplier<Profiler> supplier, boolean bl, boolean bl2, long l) {
         super(properties, registryKey, dimensionType, supplier, bl, bl2, l);
     }
 
+    @Inject(method="updateSleepingPlayers", at=@At("HEAD"), cancellable=true)
+    void cancelUpdate(CallbackInfo ci) {
+        ci.cancel();
+    }
+
     @Override
     public void setSleeping(boolean sleeping) {
-        allPlayersSleeping = sleeping;
+        sleepManager.clearSleeping();
 
         if (sleeping) {
             if (getGameRules().getBoolean(GameRules.DO_DAYLIGHT_CYCLE)) {
