@@ -26,16 +26,8 @@ package io.github.gunpowder
 
 import io.github.gunpowder.api.GunpowderMod
 import io.github.gunpowder.api.GunpowderModule
-import io.github.gunpowder.mixin.cast.SleepSetter
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
-import net.minecraft.entity.player.PlayerEntity
-import net.minecraft.server.network.ServerPlayerEntity
-import net.minecraft.stat.Stats
-import net.minecraft.text.LiteralText
-import net.minecraft.text.TranslatableText
-import net.minecraft.world.GameRules
-import kotlin.math.ceil
-import kotlin.math.roundToInt
+import io.github.gunpowder.api.components.bind
+import net.minecraft.server.world.ServerWorld
 
 class GunpowderSleepVoteModule : GunpowderModule {
     override val name = "sleepvote"
@@ -43,55 +35,7 @@ class GunpowderSleepVoteModule : GunpowderModule {
     private val gunpowder: GunpowderMod
         get() = GunpowderMod.instance
 
-    override fun registerEvents() {
-        ServerTickEvents.START_WORLD_TICK.register(ServerTickEvents.StartWorldTick { world ->
-            val sleeping = mutableListOf<ServerPlayerEntity>()
-
-            if (world.isClient || !world.dimension.isBedWorking) {
-                return@StartWorldTick
-            }
-
-            val players = world.players
-
-            players.removeIf { obj: PlayerEntity -> obj.isSpectator }
-
-            val sleepPercentage = world.gameRules.getInt(GameRules.PLAYERS_SLEEPING_PERCENTAGE) / 100.0
-
-            if (players.isEmpty() || sleepPercentage <= 0) {
-                (world as SleepSetter).setSleeping(false)
-                return@StartWorldTick
-            }
-
-            val total = players.size.toDouble()
-            val sleepingPlayers = players.stream().filter { it.isSleepingLongEnough }.toList()
-
-            val sleepingAmount = sleepingPlayers.count().toDouble()
-            val percentage = sleepingAmount / total
-            val shouldSkip = percentage >= sleepPercentage
-
-            sleepingPlayers.filter { !sleeping.contains(it) }.forEach {
-                sleeping.add(it as ServerPlayerEntity)
-
-                val text = if (shouldSkip) {
-                    TranslatableText("sleep.skipping_night")
-                } else {
-                    TranslatableText(
-                        "sleep.players_sleeping",
-                        sleepingAmount, ceil(total * sleepPercentage).roundToInt()
-                    )
-                }
-
-                world.players.forEach { p ->
-                    p.sendMessage(text, false)
-                }
-            }
-
-            (world as SleepSetter).setSleeping(shouldSkip)
-            if (shouldSkip) {
-                world.players.forEach { p -> p.statHandler.setStat(p, Stats.CUSTOM.getOrCreateStat(Stats.TIME_SINCE_REST), 0) }
-                world.players.forEach { p -> p.sendMessage(LiteralText("Good morning!"), false) }
-                sleeping.clear()
-            }
-        })
+    override fun registerComponents() {
+        ServerWorld::class.bind<WorldSleepComponent>()
     }
 }
